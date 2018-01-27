@@ -1,0 +1,66 @@
+
+<!doctype html>
+<html>
+
+<head>
+    <!-- //lyzidiamond.com/posts/external-geojson-and-leaflet-the-other-way -->
+    <link rel="stylesheet" href="//cdn.leafletjs.com/leaflet-0.7.2/leaflet.css" />
+    <link rel="stylesheet" href="styles.css" />
+    <script src="//cdn.leafletjs.com/leaflet-0.7.2/leaflet.js"></script>
+    <script src="//code.jquery.com/jquery-2.1.0.min.js"></script>
+</head>
+
+<body>
+    <div id="map-container">
+        <div id="wildfire-map"></div>
+        <div id="legend">
+            <div id="active"></div>
+            <div class="legend-text">Active</div>
+            <div id="inactive"></div>
+            <div class="legend-text">Inactive</div>
+            <div class="source">Source: <a href="https://inciweb.nwcg.gov" target="_blank">InciWeb</a></div>
+        </div>
+    </div>
+    <script>
+    var CartoDB_Positron = L.tileLayer('//{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="//www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="//cartodb.com/attributions">CartoDB</a>',
+        subdomains: 'abcd',
+        maxZoom: 19
+    });
+
+    $.getJSON("wildfires_2017.json", function(data) {
+        var geojson = L.geoJson(data, {
+            pointToLayer: function(feature, latlng) {
+                var popupOptions = {
+                    maxWidth: 200
+                };
+                var popupContent = '<h3>' + feature.properties.fireName + '</h3>' + '<hr>' + '<strong>Acres:</strong> ' + feature.properties.fireAcres + '<br><strong>Contained:</strong> ' + feature.properties.pctContained + '%<br><strong>Start:</strong> ' + feature.properties.fireStart + '<br><strong>Cause:</strong> ' + feature.properties.fireCause + '<br><a href="' + feature.properties.inciwebLink + '" target="blank">Details on InciWeb</a>';
+
+                function getOptions(properties) {
+                    if (properties.fireStatus === 'Active') {
+                        return {
+                            radius: (Math.sqrt(properties.fireAcres) * .25),
+                            color: 'red',
+                            fillColor: 'red'
+                        };
+                    } else {
+                        return {
+                            radius: (Math.sqrt(properties.fireAcres) * .25),
+                            color: 'blue',
+                            fillColor: 'blue'
+                        };
+                    }
+                }
+                return L.circleMarker(latlng, getOptions(feature.properties)).bindPopup(popupContent, popupOptions);
+
+            }
+        });
+        var map = L.map('wildfire-map').fitBounds(geojson.getBounds());
+        CartoDB_Positron.addTo(map);
+        geojson.addTo(map);
+
+    });
+    </script>
+</body>
+
+</html>
